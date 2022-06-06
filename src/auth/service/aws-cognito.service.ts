@@ -1,8 +1,11 @@
 import { HttpException, HttpStatus, Inject, Injectable } from "@nestjs/common";
-import { AuthenticationDetails, CognitoUser, CognitoUserAttribute, CognitoUserPool, CognitoUserSession } from "amazon-cognito-identity-js";
+import { AuthenticationDetails, CognitoRefreshToken, CognitoUser, CognitoUserAttribute, CognitoUserPool, CognitoUserSession } from "amazon-cognito-identity-js";
+import { rejects } from "assert";
 import { Console } from "console";
+import { session } from "passport";
 import { AuthLoginUserDto } from "../dtos/auth-login-user.dto";
 import { AuthRegisterUserDto } from "../dtos/auth-register-user.dtos";
+import { RefreshTokenDto } from "../dtos/refresh-token.dto";
 import { AuthRegisterUserResponseInterface } from "../interfaces/auth-register-user-response.interface";
 import { AwsCognitoConfig } from "../variables/aws-cognito.config";
 import { UserService } from "./user-service";
@@ -18,6 +21,38 @@ export class AwsCognitoService {
         this.userPool = new CognitoUserPool({
             UserPoolId: this.authConfig.userPoolId,
             ClientId: this.authConfig.clientId
+        });
+    }
+
+    async RefreshToken(data: RefreshTokenDto) {
+
+        var userData = {
+            Username: "",
+            Pool: this.userPool
+        }
+
+        var cognitoUser = new CognitoUser(userData);
+
+        var cognitoRefreshToken = new CognitoRefreshToken({ RefreshToken: data.refresh_token });
+
+        return new Promise((resolve, rejects) => {
+            cognitoUser.refreshSession(cognitoRefreshToken, function (err, session) {
+                if (err)
+                    if (err.code == 'NotAuthorizedException') {
+                        rejects(new HttpException({
+                            status: HttpStatus.BAD_REQUEST,
+                            error: 'Refresh Token inválido.',
+                        }, HttpStatus.BAD_REQUEST));
+                    }
+
+                var object = {
+                    token: session.getIdToken().getJwtToken(),
+                    expired: session.getIdToken().payload['exp']
+                }
+
+                resolve(object);
+            });
+
         });
     }
 
@@ -90,7 +125,9 @@ export class AwsCognitoService {
                         phoneNumber: userModel.phoneNumber,
                         id: userModel._id,
                         cpf: userModel.cpf,
-                        token: result.getIdToken().getJwtToken()
+                        token: result.getIdToken().getJwtToken(),
+                        expired: result.getIdToken().payload['exp'],
+                        refresh_token: result.getRefreshToken().getToken()
                     };
 
                     resolve(userResponse);
