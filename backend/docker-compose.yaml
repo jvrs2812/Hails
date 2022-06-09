@@ -1,5 +1,5 @@
 services:
   api-gateway:
-    image: api-skadi
+    image: api-hails
     ports:
       - '3000:3000'
