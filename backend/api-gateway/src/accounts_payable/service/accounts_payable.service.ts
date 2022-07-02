@@ -1,52 +1,72 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import { ConfigService } from "@nestjs/config";
+import { ClientProxy, ClientProxyFactory, Transport } from "@nestjs/microservices";
+import { Observable } from "rxjs";
 import { AccountsPayableDto } from "../dtos/accounts_payable.dto";
-import { AccountsPayableInterface } from "../interfaces/accounts_payable.interface";
+import { AccountsPayableIdDto } from "../dtos/accounts_payable_id.dto";
+import mongoose from "mongoose";
 
 @Injectable()
 export class AccountsPayableService {
-    constructor(@InjectModel('accounts_payable') private readonly AccountsPayableModel: Model<AccountsPayableInterface>) { }
+    private clientAdminBackend: ClientProxy;
 
-    async getAll(id_user: string): Promise<AccountsPayableDto[]> {
+    constructor(private configService: ConfigService) {
+        this.clientAdminBackend = ClientProxyFactory.create({
+            transport: Transport.RMQ,
+            options: {
+                urls: [`amqp://${this.configService.get<String>('RABBITMQ_USER')}:${this.configService.get<String>('RABBITMQ_PASSWORD')}@${this.configService.get<String>('RABBITMQ_HOST')}:${this.configService.get<String>('RABBITMQ_PORT')}`],
+                queue: 'admin-payable'
+            }
+        })
+    }
 
-        const accounts = await this.AccountsPayableModel.find({ id_user }).exec();
+    async getAll(id_user: string): Promise<Observable<AccountsPayableDto[]>> {
+
+        const accounts = this.clientAdminBackend.send<AccountsPayableDto[], String>('consulta-accounts-payable', id_user);
 
         return accounts;
     }
 
-    async getById(id: string, id_user: string): Promise<AccountsPayableDto> {
+    async getById(accountsPayable: AccountsPayableIdDto): Promise<AccountsPayableDto> {
 
-        const accounts = await this.AccountsPayableModel.findOne({ _id: id, id_user: id_user }).exec();
+        if (!this.validIdObject(accountsPayable.idAccount))
+            throw new HttpException({
+                status: HttpStatus.BAD_REQUEST,
+                message: 'Id do contas a pagar é inválido',
+            }, HttpStatus.BAD_REQUEST);
 
-        return accounts;
-    }
+        const accounts = await this.clientAdminBackend.send<AccountsPayableDto, AccountsPayableIdDto>('consulta-account-payable', accountsPayable).toPromise();
 
-
-    async postAccountsPayable(accountPay: AccountsPayableDto) {
-        const account = new this.AccountsPayableModel(accountPay);
-
-        await account.save();
-    }
-
-    async updateAccountsPayable(idAccount: string, accountPay: AccountsPayableDto) {
-        await this.validationDataUpdateAndDelete(idAccount, accountPay.id_user);
-
-        const account = await this.AccountsPayableModel.findByIdAndUpdate({ _id: idAccount }, { $set: accountPay }).exec();
-    }
-
-    async deleteAccountsPayable(id: string, id_user: string) {
-        await this.validationDataUpdateAndDelete(id, id_user);
-
-        const account = await this.AccountsPayableModel.findOneAndDelete({ _id: id, id_user: id_user }).exec();
-    }
-
-    async validationDataUpdateAndDelete(id_account: string, id_user: string) {
-        if (!await this.getById(id_account, id_user))
+        if (!accounts)
             throw new HttpException({
                 status: HttpStatus.NOT_FOUND,
-                error: 'Contas a pagar não encontrada',
+                message: 'Contas a pagar não encontrada',
             }, HttpStatus.NOT_FOUND);
 
+        return accounts;
+    }
+
+    validIdObject(value: string): boolean {
+        return mongoose.Types.ObjectId.isValid(value)
+    }
+
+    async postAccountsPayable(accountPay: AccountsPayableDto) {
+        this.clientAdminBackend.emit('criar-accounts-payable', accountPay);
+    }
+
+    async updateAccountsPayable(accountPay: AccountsPayableDto) {
+        var account = new AccountsPayableIdDto();
+        account.idAccount = accountPay._id;
+        account.idUser = accountPay.id_user;
+
+        await this.getById(account);
+
+        this.clientAdminBackend.emit('atualizar-accounts-payable', accountPay);
+    }
+
+    async deleteAccountsPayable(accountsPayanleid: AccountsPayableIdDto) {
+        await this.getById(accountsPayanleid);
+
+        this.clientAdminBackend.emit('delete-accounts-payable', accountsPayanleid);
     }
 }

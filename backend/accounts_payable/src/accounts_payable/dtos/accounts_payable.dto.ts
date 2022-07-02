@@ -1,9 +1,9 @@
 import { Type } from "class-transformer";
 import { IsNotEmpty, IsNumber, IsString, ValidateNested } from "class-validator";
-import { PayamentsDto } from "src/payaments/dto/payaments.dto";
+import { PayamentsDto } from "../../payaments/dto/payaments.dto";
 
-export class AccountsReceiveDto {
-    _id: string;
+export class AccountsPayableDto {
+    readonly _id: string;
 
     id_user: string;
 

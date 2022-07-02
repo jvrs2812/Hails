@@ -1,10 +1,11 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Req, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpException, HttpStatus, Param, Post, Put, Req, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { UserAgent } from 'amazon-cognito-identity-js';
 import { Request } from 'express';
+import { Observable } from 'rxjs';
 import { AccountsPayableDto } from '../dtos/accounts_payable.dto';
+import { AccountsPayableIdDto } from '../dtos/accounts_payable_id.dto';
 import { AccountsPayableService } from '../service/accounts_payable.service';
-
 @Controller('api/v1/accounts-payable')
 export class AccountsPayableController {
 
@@ -14,7 +15,7 @@ export class AccountsPayableController {
     @HttpCode(200)
     @UseGuards(AuthGuard('jwt'))
     @UsePipes(ValidationPipe)
-    async getAccountsPayable(@Req() req: Request): Promise<AccountsPayableDto[]> {
+    async getAccountsPayable(@Req() req: Request): Promise<Observable<AccountsPayableDto[]>> {
         return await this.accountService.getAll(req.user['idSystem']);
     }
 
@@ -23,7 +24,12 @@ export class AccountsPayableController {
     @UseGuards(AuthGuard('jwt'))
     @UsePipes(ValidationPipe)
     async getAccountPayableById(@Param('id') id: string, @Req() req: Request): Promise<AccountsPayableDto> {
-        return await this.accountService.getById(id, req.user['idSystem']);
+        var accountsPayable = new AccountsPayableIdDto();
+
+        accountsPayable.idAccount = id;
+        accountsPayable.idUser = req.user['idSystem'];
+
+        return this.accountService.getById(accountsPayable);
     }
 
     @Post()
@@ -44,8 +50,9 @@ export class AccountsPayableController {
     async PutAccountsPayable(@Param('id') id: string, @Req() req: Request, @Body() accountpay: AccountsPayableDto) {
 
         accountpay.id_user = req.user['idSystem'];
+        accountpay._id = id;
 
-        return await this.accountService.updateAccountsPayable(id, accountpay);
+        return await this.accountService.updateAccountsPayable(accountpay);
     }
 
     @Delete(':id')
@@ -53,8 +60,12 @@ export class AccountsPayableController {
     @UseGuards(AuthGuard('jwt'))
     @UsePipes(ValidationPipe)
     async DeleteAccountsPayable(@Param('id') id: string, @Req() req: Request) {
+        var accountsPayanleid = new AccountsPayableIdDto();
 
-        return await this.accountService.deleteAccountsPayable(id, req.user['idSystem']);
+        accountsPayanleid.idAccount = id;
+        accountsPayanleid.idUser = req.user['idSystem'];
+
+        return await this.accountService.deleteAccountsPayable(accountsPayanleid);
     }
 
 }

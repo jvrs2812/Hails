@@ -1,4 +1,4 @@
-import { PayamentsInterface } from "src/payaments/interfaces/payaments.interface";
+import { PayamentsInterface } from "../../payaments/interfaces/payaments.interface";
 
 export class AccountsPayableInterface extends Document {
     readonly _id: string;

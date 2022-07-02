@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { PayamentsInterface } from "src/payaments/interfaces/payaments.interface";
+import { PayamentsInterface } from "../../payaments/interfaces/payaments.interface";
 
 export const AccountsPayableSchema = new mongoose.Schema({
     id: String,

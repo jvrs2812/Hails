@@ -5,7 +5,7 @@ import { AccountsReceiveSchema } from './schemas/accounts_receive.schema';
 import { AccountsReceiveService } from './service/accounts_receive.service';
 
 @Module({
-  imports: [MongooseModule.forFeature([{ name: 'accounts_receive', schema: AccountsReceiveSchema }])],
+  imports: [],
   controllers: [AccountsReceiveController],
   providers: [AccountsReceiveService]
 })

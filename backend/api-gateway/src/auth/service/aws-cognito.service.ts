@@ -41,7 +41,7 @@ export class AwsCognitoService {
                     if (err.code == 'NotAuthorizedException') {
                         rejects(new HttpException({
                             status: HttpStatus.BAD_REQUEST,
-                            error: 'Refresh Token inválido.',
+                            message: 'Refresh Token inválido.',
                         }, HttpStatus.BAD_REQUEST));
                     }
 
@@ -62,7 +62,7 @@ export class AwsCognitoService {
         if (await this.userService.existsEmail(email)) {
             throw new HttpException({
                 status: HttpStatus.CONFLICT,
-                error: 'Email já cadastrado !',
+                message: 'Email já cadastrado !',
             }, HttpStatus.CONFLICT);
         }
 
@@ -136,12 +136,12 @@ export class AwsCognitoService {
                     if (err.code == 'UserNotConfirmedException') {
                         reject(new HttpException({
                             status: HttpStatus.FORBIDDEN,
-                            error: 'Conta não confirmada',
+                            message: 'Conta não confirmada',
                         }, HttpStatus.FORBIDDEN));
                     } else if (err.code == 'NotAuthorizedException') {
                         reject(new HttpException({
                             status: HttpStatus.FORBIDDEN,
-                            error: 'Email ou senha não encontrado.',
+                            message: 'Email ou senha não encontrado.',
                         }, HttpStatus.FORBIDDEN));
                     }
 

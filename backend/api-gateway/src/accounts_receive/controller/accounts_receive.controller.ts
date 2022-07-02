@@ -2,7 +2,9 @@ import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Req, UseGuar
 import { AuthGuard } from '@nestjs/passport';
 import { UserAgent } from 'amazon-cognito-identity-js';
 import { Request } from 'express';
+import { Observable } from 'rxjs/internal/Observable';
 import { AccountsReceiveDto } from '../dtos/accounts_receive.dto';
+import { AccountsReceiveIdDto } from '../dtos/accounts_receive_id.dto';
 import { AccountsReceiveService } from '../service/accounts_receive.service';
 
 @Controller('api/v1/accounts-receive')
@@ -14,7 +16,7 @@ export class AccountsReceiveController {
     @HttpCode(200)
     @UseGuards(AuthGuard('jwt'))
     @UsePipes(ValidationPipe)
-    async getAccountsPayable(@Req() req: Request): Promise<AccountsReceiveDto[]> {
+    async getAccountsPayable(@Req() req: Request): Promise<Observable<AccountsReceiveDto[]>> {
         return await this.accountService.getAll(req.user['idSystem']);
     }
 
@@ -23,7 +25,12 @@ export class AccountsReceiveController {
     @UseGuards(AuthGuard('jwt'))
     @UsePipes(ValidationPipe)
     async getAccountPayableById(@Param('id') id: string, @Req() req: Request): Promise<AccountsReceiveDto> {
-        return await this.accountService.getById(id, req.user['idSystem']);
+        var accountsReceiveId = new AccountsReceiveIdDto();
+
+        accountsReceiveId.idAccount = id;
+        accountsReceiveId.idUser = req.user['idSystem'];
+
+        return await this.accountService.getById(accountsReceiveId);
     }
 
     @Post()
@@ -44,8 +51,9 @@ export class AccountsReceiveController {
     async PutAccountsPayable(@Param('id') id: string, @Req() req: Request, @Body() accountpay: AccountsReceiveDto) {
 
         accountpay.id_user = req.user['idSystem'];
+        accountpay._id = id;
 
-        return await this.accountService.updateAccountsPayable(id, accountpay);
+        return await this.accountService.updateAccountsPayable(accountpay);
     }
 
     @Delete(':id')
@@ -53,8 +61,12 @@ export class AccountsReceiveController {
     @UseGuards(AuthGuard('jwt'))
     @UsePipes(ValidationPipe)
     async DeleteAccountsPayable(@Param('id') id: string, @Req() req: Request) {
+        var accountsReceiveId = new AccountsReceiveIdDto();
 
-        return await this.accountService.deleteAccountsPayable(id, req.user['idSystem']);
+        accountsReceiveId.idAccount = id;
+        accountsReceiveId.idUser = req.user['idSystem'];
+
+        return await this.accountService.deleteAccountsPayable(accountsReceiveId);
     }
 
 }
