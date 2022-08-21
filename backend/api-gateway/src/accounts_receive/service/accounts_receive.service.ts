@@ -17,7 +17,8 @@ export class AccountsReceiveService {
             transport: Transport.RMQ,
             options: {
                 urls: [`amqp://${this.configService.get<String>('RABBITMQ_USER')}:${this.configService.get<String>('RABBITMQ_PASSWORD')}@${this.configService.get<String>('RABBITMQ_HOST')}:${this.configService.get<String>('RABBITMQ_PORT')}`],
-                queue: 'admin-receive'
+                queue: 'admin-receive',
+                noAck: false,
             }
         })
     }

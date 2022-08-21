@@ -41,19 +41,6 @@ export class AccountsPayableService {
         const account = new this.AccountsPayableModel(accountPay);
 
         await account.save();
-
-        try {
-
-            var sendEmail = new SendEmailDto();
-
-            sendEmail.subject = 'Contas a Pagar Criado';
-            sendEmail.text = `Contas a Pagar Nº ${account._id} \n criado as  ${Date.now} pelo usuario ${accountPay.id_user}`;
-            sendEmail.to = accountPay.id_user;
-
-            this.clientAdminBackend.send<SendEmailDto, SendEmailDto>('enviar-email', sendEmail);
-        } catch (err) {
-            console.log('error' + err.Message);
-        }
     }
 
     async updateAccountsPayable(accountPay: AccountsPayableDto) {

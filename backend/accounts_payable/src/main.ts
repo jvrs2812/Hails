@@ -14,7 +14,8 @@ async function bootstrap() {
         urls: [`amqp://${configService.get<String>('RABBITMQ_USER')}:${configService.get<String>('RABBITMQ_PASSWORD')}@${configService.get<String>('RABBITMQ_HOST')}:${configService.get<String>('RABBITMQ_PORT')}`],
         queue: 'admin-payable',
         noAck: false,
-      }
+      },
+      logger: console
     },
   );
   await app.listen();

@@ -13,7 +13,7 @@ async function bootstrap() {
       options: {
         urls: [`amqp://${configService.get<String>('RABBITMQ_USER')}:${configService.get<String>('RABBITMQ_PASSWORD')}@${configService.get<String>('RABBITMQ_HOST')}:${configService.get<String>('RABBITMQ_PORT')}`],
         queue: 'admin-receive',
-        noAck: true,
+        noAck: false,
       }
     },
   );

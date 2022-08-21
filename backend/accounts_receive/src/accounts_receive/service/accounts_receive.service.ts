@@ -42,21 +42,6 @@ export class AccountsReceiveService {
         const account = new this.AccountsReceiveModel(accountPay);
 
         await account.save();
-
-        try {
-
-            var sendEmail = new SendEmailDto();
-
-            sendEmail.html = '';
-            sendEmail.subject = 'Contas a Receber Criado';
-            sendEmail.text = `Contas a receber Nº ${account._id} \n criado as  ${Date.now} pelo usuario ${accountPay.id_user}`;
-            sendEmail.to = accountPay.id_user;
-
-            this.clientAdminBackend.send<SendEmailDto, SendEmailDto>('enviar-email', sendEmail);
-        } catch (err) {
-            console.log('error' + err.Message);
-        }
-
     }
 
     async updateAccountsReceive(accountsReceive: AccountsReceiveDto) {
