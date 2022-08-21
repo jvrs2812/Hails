@@ -68,7 +68,7 @@ export class AccountsReceiveService {
     async deleteAccountsPayable(accountsReceiveId: AccountsReceiveIdDto) {
         await this.getById(accountsReceiveId);
 
-        this.clientAdminBackend.emit('delete-accounts-payable', accountsReceiveId);
+        this.clientAdminBackend.emit('delete-accounts-receive', accountsReceiveId);
     }
 
 }

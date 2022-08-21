@@ -1,15 +1,26 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
-import { RpcException } from "@nestjs/microservices";
+import { ClientProxy, ClientProxyFactory, RpcException, Transport } from "@nestjs/microservices";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { Observable } from "rxjs";
 import { AccountsPayableDto } from "../dtos/accounts_payable.dto";
 import { AccountsPayableIdDto } from "../dtos/accounts_payable_id.dto";
 import { AccountsPayableInterface } from "../interfaces/accounts_payable.interface";
+import { SendEmailDto } from "../../../../usescases/email/dto/send.email.dto"
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class AccountsPayableService {
-    constructor(@InjectModel('accounts_payable') private readonly AccountsPayableModel: Model<AccountsPayableInterface>) { }
+    private clientAdminBackend: ClientProxy;
+    constructor(@InjectModel('accounts_payable') private readonly AccountsPayableModel: Model<AccountsPayableInterface>, private configService: ConfigService) {
+        this.clientAdminBackend = ClientProxyFactory.create({
+            transport: Transport.RMQ,
+            options: {
+                urls: [`amqp://${this.configService.get<String>('RABBITMQ_USER')}:${this.configService.get<String>('RABBITMQ_PASSWORD')}@${this.configService.get<String>('RABBITMQ_HOST')}:${this.configService.get<String>('RABBITMQ_PORT')}`],
+                queue: 'admin-email'
+            }
+        })
+    }
 
     async getAll(id_user: string): Promise<AccountsPayableDto[]> {
 
@@ -30,6 +41,19 @@ export class AccountsPayableService {
         const account = new this.AccountsPayableModel(accountPay);
 
         await account.save();
+
+        try {
+
+            var sendEmail = new SendEmailDto();
+
+            sendEmail.subject = 'Contas a Pagar Criado';
+            sendEmail.text = `Contas a Pagar Nº ${account._id} \n criado as  ${Date.now} pelo usuario ${accountPay.id_user}`;
+            sendEmail.to = accountPay.id_user;
+
+            this.clientAdminBackend.send<SendEmailDto, SendEmailDto>('enviar-email', sendEmail);
+        } catch (err) {
+            console.log('error' + err.Message);
+        }
     }
 
     async updateAccountsPayable(accountPay: AccountsPayableDto) {

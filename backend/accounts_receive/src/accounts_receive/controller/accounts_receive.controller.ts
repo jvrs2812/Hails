@@ -11,29 +11,76 @@ export class AccountsReceiveController {
     constructor(private accountService: AccountsReceiveService) { }
 
     @MessagePattern('consulta-accounts-receive')
-    async getAccountsPayable(@Payload() idUser: string): Promise<AccountsReceiveDto[]> {
-        return await this.accountService.getAll(idUser);
+    async getAccountsPayable(@Payload() idUser: string, @Ctx() context: RmqContext): Promise<AccountsReceiveDto[]> {
+
+        const channel = context.getChannelRef();
+
+        const originalMessage = context.getMessage();
+
+        try {
+            return await this.accountService.getAll(idUser);
+        } finally {
+            await channel.ack(originalMessage);
+        }
+
+
     }
 
     @MessagePattern('consulta-account-receive')
-    async getAccountPayableById(@Payload() accountsPayableIdDto: AccountsPayableIdDto): Promise<AccountsReceiveDto> {
-        return await this.accountService.getById(accountsPayableIdDto);
+    async getAccountPayableById(@Payload() accountsPayableIdDto: AccountsPayableIdDto, @Ctx() context: RmqContext): Promise<AccountsReceiveDto> {
+
+        const channel = context.getChannelRef();
+
+        const originalMessage = context.getMessage();
+
+        try {
+            return await this.accountService.getById(accountsPayableIdDto);
+        } finally {
+            await channel.ack(originalMessage);
+        }
     }
 
-    @MessagePattern('criar-accounts-receive')
-    async PostAccountsPayable(@Payload() accountsReceive: AccountsReceiveDto) {
-        return await this.accountService.postAccountsPayable(accountsReceive);
+    @EventPattern('criar-accounts-receive')
+    async PostAccountsPayable(@Payload() accountsReceive: AccountsReceiveDto, @Ctx() context: RmqContext) {
+
+        const channel = context.getChannelRef();
+
+        const originalMessage = context.getMessage();
+
+        try {
+            return await this.accountService.postAccountsReceive(accountsReceive);
+        } finally {
+            await channel.ack(originalMessage);
+        }
     }
 
-    @MessagePattern('atualizar-accounts-receive')
-    async PutAccountsPayable(@Payload() accountsReceive: AccountsReceiveDto) {
+    @EventPattern('atualizar-accounts-receive')
+    async PutAccountsPayable(@Payload() accountsReceive: AccountsReceiveDto, @Ctx() context: RmqContext) {
+        const channel = context.getChannelRef();
 
-        return await this.accountService.updateAccountsPayable(accountsReceive);
+        const originalMessage = context.getMessage();
+
+        try {
+            return await this.accountService.updateAccountsReceive(accountsReceive);
+        } finally {
+            await channel.ack(originalMessage);
+        }
     }
 
-    async DeleteAccountsPayable(@Payload() accountsReceive: AccountsPayableIdDto) {
+    @EventPattern('delete-accounts-receive')
+    async DeleteAccountsPayable(@Payload() accountsReceive: AccountsPayableIdDto, @Ctx() context: RmqContext) {
 
-        return await this.accountService.deleteAccountsPayable(accountsReceive);
+
+
+        const channel = context.getChannelRef();
+
+        const originalMessage = context.getMessage();
+
+        try {
+            return await this.accountService.deleteAccountsReceive(accountsReceive);
+        } finally {
+            await channel.ack(originalMessage);
+        }
     }
 
 }
