@@ -32,8 +32,6 @@ export class AccountsPayableController {
 
         const originalMessage = context.getMessage();
 
-        console.log(originalMessage);
-
         try {
             await this.accountService.postAccountsPayable(accountpay);
 

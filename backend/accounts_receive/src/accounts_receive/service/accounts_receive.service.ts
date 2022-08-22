@@ -6,8 +6,8 @@ import { AccountsPayableIdDto } from "../dtos/accounts_receive_id.dto";
 import { ClientProxy, ClientProxyFactory, RpcException, Transport } from "@nestjs/microservices";
 import { InjectModel } from "@nestjs/mongoose";
 import { ConfigService } from "@nestjs/config";
-import { SendEmailDto } from '../../../../usescases/email/dto/send.email.dto';
 import { send } from "process";
+import { SendEmailDto } from "../email/dto/send.email.dto";
 
 @Injectable()
 export class AccountsReceiveService {
@@ -37,11 +37,41 @@ export class AccountsReceiveService {
         return accounts;
     }
 
+    returnTime(): string {
+        var hora = new Date().getHours().toString();
+        var minuto = new Date().getMinutes().toString();
+        var seconds = new Date().getSeconds().toString();
+
+        if (hora.length == 1) {
+            hora = "0" + hora;
+        }
+
+        if (minuto.length == 1) {
+            minuto = "0" + minuto;
+        }
+
+        if (seconds.length == 1) {
+            seconds = "0" + seconds;
+        }
+
+        return `${hora}:${minuto}:${seconds}`;
+    }
+
 
     async postAccountsReceive(accountPay: AccountsReceiveDto) {
         const account = new this.AccountsReceiveModel(accountPay);
 
         await account.save();
+
+        var emailDto = new SendEmailDto();
+
+        var utc_timestamp = new Date().toLocaleDateString('pt-BR');
+
+        emailDto.subject = 'Contas a Receber Criado 📨';
+        emailDto.to = account.id_user;
+        emailDto.text = `Contas a Receber Nº: ${account._id} \ndata: ${utc_timestamp} as ${this.returnTime()} \nFavorecido: ${account.favored} \nValor: ${account.value_total} \nNº de Parcelas: ${account.number_installments} `;
+
+        this.clientAdminBackend.emit<any, SendEmailDto>('enviar-email', emailDto);
     }
 
     async updateAccountsReceive(accountsReceive: AccountsReceiveDto) {

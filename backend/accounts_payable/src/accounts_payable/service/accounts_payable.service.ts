@@ -1,13 +1,14 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { ClientProxy, ClientProxyFactory, RpcException, Transport } from "@nestjs/microservices";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import { Model, now } from "mongoose";
 import { Observable } from "rxjs";
 import { AccountsPayableDto } from "../dtos/accounts_payable.dto";
 import { AccountsPayableIdDto } from "../dtos/accounts_payable_id.dto";
 import { AccountsPayableInterface } from "../interfaces/accounts_payable.interface";
-import { SendEmailDto } from "../../../../usescases/email/dto/send.email.dto"
 import { ConfigService } from "@nestjs/config";
+import { SendEmailDto } from "src/email/dto/send.email.dto";
+import { throws } from "assert";
 
 @Injectable()
 export class AccountsPayableService {
@@ -41,6 +42,19 @@ export class AccountsPayableService {
         const account = new this.AccountsPayableModel(accountPay);
 
         await account.save();
+
+        var emailDto = new SendEmailDto();
+
+        var utc_timestamp = new Date().toLocaleDateString('pt-BR');
+        var hora = new Date().getHours();
+        var minuto = new Date().getMinutes();
+        var seconds = new Date().getSeconds();
+
+        emailDto.subject = 'Contas a Pagar Criado 📨';
+        emailDto.to = account.id_user;
+        emailDto.text = `Contas a pagar Nº: ${account._id} \ndata: ${utc_timestamp} ás ${hora}:${minuto}:${seconds} \nFavorecido: ${account.favored} \nValor: ${account.value_total} \nNº de Parcelas: ${account.number_installments} `;
+
+        this.clientAdminBackend.emit<any, SendEmailDto>('enviar-email', emailDto);
     }
 
     async updateAccountsPayable(accountPay: AccountsPayableDto) {
