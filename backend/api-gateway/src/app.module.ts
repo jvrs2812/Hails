@@ -9,7 +9,7 @@ import { AccountsReceiveModule } from './accounts_receive/accounts_receive.modul
 
 
 @Module({
-  imports: [MongooseModule.forRoot('mongodb+srv://admin:ixKGSoQunsTAVYd9@skadi.bxtsb.mongodb.net/user?retryWrites=true&w=majority', { useNewUrlParser: true, useUnifiedTopoLogy: true }), ConfigModule.forRoot(
+  imports: [MongooseModule.forRoot('mongodb+srv:'+process.ENV.MONGODB, { useNewUrlParser: true, useUnifiedTopoLogy: true }), ConfigModule.forRoot(
     { isGlobal: true }
   ), AuthModule, AccountsPayableModule, AccountsReceiveModule],
   controllers: [AppController],
